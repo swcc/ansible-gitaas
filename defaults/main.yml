@@ -1,0 +1,11 @@
+---
+# System defaults
+git_user: git
+git_home: /opt/git
+
+# Whether to install rootless-docker for the git user
+rootless_docker_enabled: false
+
+# List to populate for your needs
+git_authorized_keys: []
+git_repos: []

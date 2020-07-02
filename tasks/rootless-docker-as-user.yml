@@ -1,0 +1,51 @@
+---
+- name: Get rootless Docker installation script
+  become: yes
+  become_user: "{{ docker_user.name }}"
+  get_url:
+    url: https://get.docker.com/rootless
+    dest: /tmp/rootless-docker.sh
+    mode: 0700
+
+- name: Install rootless Docker # noqa 305
+  become: yes
+  become_user: "{{ docker_user.name }}"
+  shell: /tmp/rootless-docker.sh
+  args:
+    creates: "{{ git_home }}/bin/dockerd"
+  register: docker_installation_logs
+
+- name: Add user environment variables
+  become: yes
+  become_user: "{{ docker_user.name }}"
+  lineinfile:
+    path: ~/.profile
+    line: "{{ item }}"
+  with_items: "{{ docker_installation_logs.stdout_lines | select('match', '^export ') | list }}"
+
+- name: Add extra user profile helpers
+  become: yes
+  become_user: "{{ docker_user.name }}"
+  lineinfile:
+    path: ~/.profile
+    line: "{{ item }}"
+  with_items:
+    - "export HOME=/opt/git"
+    - "compose() { docker-compose -p \"$(basename $(pwd))\" \"$@\"; }"
+    - "list() { find /opt/git/ -maxdepth 1 -type l -name '*_current' -exec basename {} \\; ; }"
+
+# systemctl --user doesn't work due to "Failed to connect to bus: No such file or directory" error
+# :(
+# - name: Start docker daemon
+#   become_user: "{{ docker_user.name }}"
+#   systemd:
+#     name: docker
+#     state: started
+#     enabled: yes
+#     scope: user
+
+# Debian package has a deps on docker.io
+# And thus installs another version of docker on the system :/
+- name: Install docker-compose utility
+  apt:
+    name: docker-compose

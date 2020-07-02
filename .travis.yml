@@ -1,0 +1,29 @@
+---
+language: python
+python:
+  - "2.7"
+  - "3.7"
+
+# Install ansible
+addons:
+  apt:
+    packages:
+    - python-pip
+
+install:
+  # Install ansible
+  - pip install ansible
+
+  # Check ansible version
+  - ansible --version
+
+script:
+  # Basic role syntax check
+  - ansible-playbook tests/test.yml -i tests/inventory --syntax-check
+  # Use the role and install git
+  - ansible-playbook tests/test.yml -i tests/inventory
+  # Verify git home is present
+  - ls -la /opt/git/
+
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/

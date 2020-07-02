@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+# shellcheck source={{ git_home }}/.profile
+source "${HOME}/.profile"
+
+read -ra refs
+
+cat <<EOF
+#―――――――――――――――――――――――――――――――――――――#
+#    (Hello from {{git_welcome_banner|default('BearLand!')}})           #
+#      O                              #
+#     o                               #
+#    °                                #
+# ʕ·͡ᴥ·ʔノシ                           #
+EOF
+
+# from_commit="${refs[0]}"
+to_commit="${refs[1]}"
+branch_name="${refs[2]##*\/}"
+git_dir="$(basename "$(pwd)")"
+app_dir="${git_dir%\.git}_$(date +%s)_${to_commit}"
+current_link="${git_dir%\.git}_current"
+
+cd ..
+
+# Clone repository from bare repo to create app repo
+cat <<EOF
+#―――――――――――――――――――――――――――――――――――――#
+# Updating app directory              #
+EOF
+git clone -b "${branch_name}" --single-branch --depth 1 "file://$(pwd)/${git_dir}" "${app_dir}"
+
+# Cleanup old deployments
+# Keep only last 3
+
+cat <<EOF
+#―――――――――――――――――――――――――――――――――――――#
+# Cleaning up old versions            #
+EOF
+find . -maxdepth 1 -type d -name "${git_dir%\.git}_*" | sort | head -n -"3" | xargs rm -rf
+
+# Let's go for the deploy
+ln -snf "${app_dir}" "${current_link}"
+cd "${current_link}" || (
+    cat <<EOF
+# Oh no! The application directory is #
+# not accessible.                     #
+#                                     #
+# Deployment failed, please contact   #
+# support.                            #
+#―――――――――――――――――――――――――――――――――――――#
+EOF
+    exit 1
+)
+
+cat <<EOF
+#―――――――――――――――――――――――――――――――――――――#
+# Starting deployment 🚀...           #
+#                                     #
+EOF
+
+if [ -f docker-compose.yml ]; then
+    # We need to stop and destroy the existing running containers
+    # in order for ephemeral volumes to be recreated
+    # (the --force-recreate of the up command is not enough)
+    # Yes this creates downtime
+    docker-compose -p "${current_link}" down
+    docker-compose -p "${current_link}" up --build -d
+else
+    (
+        cat <<EOF
+# Oh no! We don't recognise this type #
+# of application sorry. This is the   #
+# list of supported application type: #
+#                                     #
+# - docker-compose based applications #
+# (needs a docker-compose.yml file)   #
+#                                     #
+# Deployment failed, please contact   #
+# support.                            #
+#―――――――――――――――――――――――――――――――――――――#
+EOF
+        exit 1
+    )
+fi
+
+# We could add deployment hooks if needed...
+# if [ -f deploy/pre_start.sh ]; then
+#     ./deploy/pre_start.sh
+# fi
+
+# if [ -f deploy/start.sh ]; then
+#     ./deploy/start.sh
+# fi
+
+# if [ -f deploy/post_start.sh ]; then
+#     ./deploy/post_start.sh
+# fi
+
+cat <<EOF
+#                                     #
+# Deployment done ✓ Goodbye 👋         #
+#―――――――――――――――――――――――――――――――――――――#
+EOF

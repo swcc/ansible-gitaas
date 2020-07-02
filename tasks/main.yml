@@ -1,0 +1,40 @@
+---
+# Basically doing all of the Git-books' advises
+# https://git-scm.com/book/en/v2/Git-on-the-Server-Setting-Up-the-Server
+
+- name: Install git
+  apt:
+    name: git
+
+- name: Create git user
+  user:
+    name: "{{ git_user }}"
+    home: "{{ git_home }}"
+    shell: /usr/bin/git-shell
+  register: docker_user
+
+- name: SSH config for git user
+  file:
+    state: directory
+    path: "{{ git_home }}/.ssh"
+    owner: "{{ git_user }}"
+    group: "{{ git_user }}"
+    mode: 0700
+
+- name: Give access to git server
+  authorized_key:
+    user: "{{ git_user }}"
+    state: present
+    key: "{{ item }}"
+    key_options: "no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty"
+  with_items: "{{ git_authorized_keys }}"
+
+- name: Initialise bare repos
+  include: init.yml
+  loop: "{{ git_repos }}"
+  loop_control:
+    loop_var: git_repo
+
+- name: Install rootless docker
+  include: rootless-docker.yml
+  when: rootless_docker_enabled
