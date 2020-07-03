@@ -1,0 +1,24 @@
+---
+- hosts: localhost
+  become: yes
+  roles:
+    - role: git
+      vars:
+        git_repos:
+          - project1
+          - project2
+        git_authorized_keys:
+          - "{{ lookup('file', 'public_keys/random.pub') }}"
+        rootless_docker_enabled: true
+  post_tasks:
+    - stat:
+        path: "{{ item }}"
+      with_items:
+        - "{{ git_home }}/project1.git"
+        - "{{ git_home }}/project2.git"
+      register: actual_project_dirs
+    - name: Test expected file structure
+      fail:
+        msg: "Git project directory ({{ item.item }}) should exist!"
+      when: not item.stat.exists or not item.stat.isdir
+      with_items: "{{ actual_project_dirs.results }}"

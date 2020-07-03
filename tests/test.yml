@@ -3,3 +3,10 @@
   become: yes
   roles:
     - role: git
+  post_tasks:
+    - stat:
+        path: "{{ git_home }}"
+      register: actual_home_dir
+    - fail:
+        msg: "Git home directory should exist!"
+      when: not actual_home_dir.stat.exists or not actual_home_dir.stat.isdir

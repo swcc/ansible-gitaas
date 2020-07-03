@@ -3,6 +3,9 @@ language: python
 python:
   - "2.7"
   - "3.7"
+env:
+  - TEST_PLAYBOOK=test.yml
+  - TEST_PLAYBOOK=test-complete.yml
 
 # Install ansible
 addons:
@@ -19,11 +22,9 @@ install:
 
 script:
   # Basic role syntax check
-  - ansible-playbook tests/test.yml -i tests/inventory --syntax-check
-  # Use the role and install git
-  - ansible-playbook tests/test.yml -i tests/inventory
-  # Verify git home is present
-  - ls -la /opt/git/
+  - ansible-playbook "tests/${TEST_PLAYBOOK}" -i tests/inventory --syntax-check
+  # Use the role
+  - ansible-playbook "tests/${TEST_PLAYBOOK}" -i tests/inventory
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/
