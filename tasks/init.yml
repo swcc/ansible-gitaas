@@ -2,12 +2,12 @@
 - name: Initialise bare repos # noqa 303
   command: git init --bare "{{ git_repo }}.git"
   args:
-    chdir: "{{ git_home }}"
-    creates: "{{ git_home }}/{{ git_repo }}.git"
+    chdir: /opt/git
+    creates: "/opt/git/{{ git_repo }}.git"
 
 - name: Give bare repos dir to git user
   file:
-    path: "{{ git_home }}/{{ git_repo }}.git"
+    path: "/opt/git/{{ git_repo }}.git"
     owner: git
     group: git
     recurse: yes
@@ -15,7 +15,7 @@
 - name: Install post-receive hook for automatic deployments
   template:
     src: post-receive.j2
-    dest: "{{ git_home }}/{{ git_repo }}.git/hooks/post-receive"
+    dest: "/opt/git/{{ git_repo }}.git/hooks/post-receive"
     owner: git
     group: git
     mode: 0700

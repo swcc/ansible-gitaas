@@ -2,14 +2,14 @@
 
 set -eo pipefail
 
-# shellcheck source={{ git_home }}/.profile
+# shellcheck source=/opt/git/.profile
 source "${HOME}/.profile"
 
 read -ra refs
 
 cat <<EOF
 #―――――――――――――――――――――――――――――――――――――#
-#    (Hello from {{git_welcome_banner|default('BearLand!')}})           #
+#    (Hello from BearLand!)           #
 #      O                              #
 #     o                               #
 #    °                                #
